@@ -17,7 +17,7 @@ def load_dlib_models():
         face_recognition_models.pose_predictor_model_location()
     )
 
-    facerec = dlib.face_recognition_models_v1(
+    facerec = dlib.face_recognition_model_v1(
         face_recognition_models.face_recognition_model_location()
     )
 
@@ -82,7 +82,7 @@ def predict_attendance(class_image_np):
     model_data  = get_trained_model()
 
     if not  model_data:
-        return detected_student, [], len(encoding)
+        return detected_student, [], len(encodings)
     
     clf = model_data['clf']
     X_train = model_data['X']

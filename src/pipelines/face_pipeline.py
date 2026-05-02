@@ -64,7 +64,7 @@ def get_trained_model():
         except ValueError:
             pass 
 
-        return{'clf':clf, "X":X, "Y":y}
+        return{'clf':clf, "X":X, "y":y}
 
     
 def train_classifier():
@@ -94,9 +94,9 @@ def predict_attendance(class_image_np):
         if len(all_students) >= 2:
             predicted_id = int(clf.predict([encoding])[0])
         else:
-            predicted_id = int(all_students(0))
+            predicted_id = int(all_students[0])
 
-        student_embedding = X_train(y_train.index(predicted_id))
+        student_embedding = X_train[y_train.index(predicted_id)]
 
         best_match_score = np.linalg.norm(student_embedding - encoding)
 

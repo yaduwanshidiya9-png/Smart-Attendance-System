@@ -85,10 +85,14 @@ def teacher_tab_manage_subjects():
     col1, col2 = st.columns(2)
     with col1:
         st.header('Manage Subjects', width='stretch')
+        st.space()
+        st.space()
     
     with col2:
         if st.button('Create New Subjects', width='stretch'):
             create_subject_dialog(teacher_id)
+            st.space()
+            st.space()
 
     # LIST all SUBJECTS
     subjects = get_teacher_subjects(teacher_id)

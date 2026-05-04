@@ -1,4 +1,6 @@
 import streamlit as st
+
+
 def subject_card(name, code, section, stats=None, footer_callback=None):
     html = f"""
         <div style="background:white; border-left: 8px solid #EB459E; padding:25px; border-radius: 28px; border: 1px solid black; margin-bottom:20px;">
@@ -8,7 +10,7 @@ def subject_card(name, code, section, stats=None, footer_callback=None):
         """
     
     if stats:
-        html  += """"
+        html  += """
         <div style="display-flex:flex; gap:8px; flex-wrap:wrap;">
         """
 

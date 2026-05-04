@@ -6,7 +6,7 @@ import time
 
 
 @st.dialog("Capture or upload photos")
-def add_photo_dialog():
+def add_photos_dialog():
 
     st.write("Add classroom photos to scan for attendance")
 

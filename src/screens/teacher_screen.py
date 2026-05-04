@@ -7,9 +7,9 @@ from src.components.subject_card import subject_card
 from src.components.dialog_share_subject import share_subject_dialog
 from src.Database.db import check_teacher_exists, create_teacher, teacher_login, get_teacher_subjects
 from src.components.dialog_create_subject import create_subject_dialog
-from src.components.dialog_add_photo import add_photo_dialog
+from src.components.dialog_add_photo import add_photos_dialog
 
-from src.components.dialog_attendance_result import attendance_result_dialog
+from src.components.dialog_attendance_results import attendance_result_dialog
 
 from src.pipelines.face_pipeline import predict_attendance
 from src.Database.config import supabase
@@ -19,6 +19,7 @@ import pandas as pd
 from datetime import datetime
 from src.components.dialog_voice_attendance import voice_attendance_dialog
 from src.Database.db import get_attendance_for_teacher
+
 
 # ---------------- MAIN ENTRY ----------------
 def teacher_screen():
@@ -90,7 +91,8 @@ def teacher_dashboard():
 
 def teacher_tab_take_attendance():
     teacher_id = st.session_state.teacher_data['teacher_id']
-    st.header('Take AI Attendence')
+    st.header('Take AI Attendance')
+
 
     if 'attendance_images' not in st.session_state:
         st.session_state.attendance_images = []
@@ -98,40 +100,40 @@ def teacher_tab_take_attendance():
     subjects = get_teacher_subjects(teacher_id)
 
     if not subjects:
-        st.warning("You haven't created any subjects yet! Please create one to begin!")
-        return 
+        st.warning('You havent created any subjects yet! Please create one to begin!')
+        return
     
-    subject_option = {f"{s['name']} - {s['subject_code']}" : s['subject_id'] for s in subjects}
+    subject_options = {f"{s['name']} - {s['subject_code']}": s['subject_id'] for s in subjects}
 
-    col1, col2 = st.columns([3, 1], vertical_alignment='bottom')
+    col1, col2 = st.columns([3,1], vertical_alignment='bottom')
 
     with col1:
-        selected_subject_label = st.selectbox('Select Subject', options=list(subject_option.keys()))
+        selected_subject_label = st.selectbox('Select Subject', options=list(subject_options.keys()))
 
     with col2:
         if st.button('Add Photos', type='primary', icon=':material/photo_prints:', width='stretch'):
-            add_photo_dialog()
+            add_photos_dialog()
 
-        
-    selected_subject_id = subject_option[selected_subject_label]
+    selected_subject_id = subject_options[selected_subject_label]
 
     st.divider()
 
-    if st.session_state.attendance_images :
-        st.header("Added Photos")
+    if st.session_state.attendance_images:
+        st.header('Added Photos')
         gallery_cols = st.columns(4)
 
         for idx, img in enumerate(st.session_state.attendance_images):
-            with gallery_cols[idx % 4]:
-                st.image(img, width='stretch', caption=f"Photo {idx+1}")
+            with gallery_cols[idx % 4 ]:
+                st.image(img, width='stretch', caption=f'Photo {idx+1}')
     has_photos = bool(st.session_state.attendance_images)
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        if st.button('Clear all photos', width='stretch', type='tertiary', icon=":material/delete:", disabled=not has_photos):
-            st.session_state.attendance_image = []
+        if st.button('Clear all photos', width='stretch', type='tertiary', icon=':material/delete:', disabled=not has_photos):
+            st.session_state.attendance_images = []
             st.rerun()
-    
+
+
     with c2:
         
         if st.button('Run Face Analysis', width='stretch', type='secondary', icon=':material/analytics:', disabled=not has_photos):
@@ -164,27 +166,28 @@ def teacher_tab_take_attendance():
                     for node in enrolled_students:
                         student = node['students']
                         sources = all_detected_ids.get(int(student['student_id']), [])
-                        is_present = len(sources) > 0
+                        is_present_bool= len(sources) > 0
 
                         results.append({
                             "Name": student['name'],
                             "ID": student['student_id'],
-                            "Source": ", ".join(sources) if is_present else "-",
-                            "Status": "✅ Present" if is_present else "❌ Absent"
+                            "Source": ", ".join(sources) if is_present_bool else "-",
+                            "Status": "✅ Present" if is_present_bool else "❌ Absent"
                         })
-
 
                         attendance_to_log.append({
                             'student_id': student['student_id'],
                             'subject_id': selected_subject_id,
                             'timestamp': current_timestamp,
-                            'is_present': bool(is_present)
+                            'is_present_bool': bool(is_present_bool)
                         })
+
                     attendance_result_dialog(pd.DataFrame(results), attendance_to_log)
 
     with c3:
-        if st.button('Use Voice Attendance', type='primary', width='stretch', icon=":material/mic:"):
+        if st.button('Use Voice Attendance', type='primary', width='stretch', icon=':material/mic:'):
             voice_attendance_dialog(selected_subject_id)
+
 
 
 
@@ -246,9 +249,47 @@ def teacher_tab_attendance_record():
     records = get_attendance_for_teacher(teacher_id)
 
     if not records:
-        return 
+        return
     
-    data 
+    data = []
+
+    for r in records:
+        ts = r.get('timestamp')
+
+        data.append({
+            "ts_group": ts.split(".")[0] if ts else None,
+            "Time": datetime.fromisoformat(ts).strftime("%Y-%m-%d %I:%M %p") if ts else "N'A",
+            "Subject": r['subjects']['name'],
+            "Subject Code":r['subjects']['subject_code'],
+            "is_present": bool(r.get('is_present', False))
+        })
+
+
+    df = pd.DataFrame(data)
+
+
+
+    summary = (
+        df.groupby(['ts_group', 'Time', 'Subject', 'Subject Code'])
+        .agg(
+            Present_Count = ('is_present', 'sum'),
+            Total_Count =('is_present', 'count')
+        ).reset_index()
+
+    )
+
+    summary['Attendance Stats'] = (
+        "✅ " + summary['Present_Count'].astype(str) + " /"
+        + summary['Total_Count'].astype(str) + ' Students'
+    )
+
+    display_df = ( summary.sort_values(by='ts_group' ,ascending=False)
+                  [['Time', 'Subject', 'Subject Code', 'Attendance Stats']]
+                  )
+    
+    st.dataframe(display_df, width='stretch', hide_index=True)
+
+
 
 
 
@@ -387,3 +428,6 @@ def teacher_screen_register():
             st.rerun()
 
     footer_dashboard()
+
+
+

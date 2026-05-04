@@ -4,7 +4,7 @@ from src.pipelines.voice_pipeline import process_bulkk_audio
 from src.Database.config import supabase
 from datetime import datetime
 
-from src.components.dialog_attendance_result import show_attendance_result
+from src.components.dialog_attendance_results import show_attendance_result
 
 import pandas as pd
 
@@ -47,13 +47,13 @@ def voice_attendance_dialog(selected_subject_id):
             for node in enrolled_students:
                 student = node['students']
                 score = detected_scores.get(student['student_id'], 0.0)
-                is_present= bool(score>0)
+                is_present_bool= bool(score>0)
 
                 results.append({
                     "Name": student['name'],
                     "ID": student['student_id'],
-                    "Source": score  if is_present else "-",
-                    "Status": "✅ Present" if is_present else "❌ Absent"
+                    "Source": score  if is_present_bool else "-",
+                    "Status": "✅ Present" if is_present_bool else "❌ Absent"
                 })
 
 
@@ -61,7 +61,7 @@ def voice_attendance_dialog(selected_subject_id):
                     'student_id': student['student_id'],
                     'subject_id': selected_subject_id,
                     'timestamp': current_timestamp,
-                    'is_present': bool(is_present)
+                    'is_present_bool': bool(is_present_bool)
                 })
 
             st.session_state.voice_attendance_results = (pd.DataFrame(results), attendance_to_log)

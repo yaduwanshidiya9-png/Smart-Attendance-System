@@ -221,22 +221,20 @@ def teacher_tab_manage_subjects():
                 ("🫂", "Students", sub['total_students']),
                 ("🕰️", "Classes", sub['total_classes']),
             ]
-        
-        def share_btn():
-            if st.button(f"Share Code: {sub['name']}", key=f"share_{sub['subject_code']}", icon=":material/share:"):
-                share_subject_dialog(sub['name'], sub['subject_code'])
-            st.space()
 
-        subject_card(
-            name = sub['name'],
-            code = sub['subject_code'],
-            section = sub['section'],
-            stats = stats,
-            footer_callback = share_btn
-        )
+            for idx, sub in enumerate(subjects):
+                s = sub
+                def share_btn(s=s, idx=idx):
+                    if st.button(f"Share Code: {s['name']}",
+                            key=f"share_{s.get('id', s['code'])}_{idx}"
+                    ):
+                        st.code(s['code'])
+                        subject_card(..., footer_callback=share_btn)
 
     else:
         st.info("NO SUBJECT FOUND, CREATE ONE ABOVE")
+
+
 
 
 
@@ -261,8 +259,13 @@ def teacher_tab_attendance_record():
             "Time": datetime.fromisoformat(ts).strftime("%Y-%m-%d %I:%M %p") if ts else "N'A",
             "Subject": r['subjects']['name'],
             "Subject Code":r['subjects']['subject_code'],
-            "is_present": bool(r.get('is_present', False))
+            "is_present_bool": bool(r.get('is_present_bool', False))
         })
+
+    
+    Present_Count = ('is_present_bool', 'sum'),
+
+    Total_Count = ('is_present_bool', 'count'),
 
 
     df = pd.DataFrame(data)
@@ -270,13 +273,13 @@ def teacher_tab_attendance_record():
 
 
     summary = (
-        df.groupby(['ts_group', 'Time', 'Subject', 'Subject Code'])
-        .agg(
-            Present_Count = ('is_present', 'sum'),
-            Total_Count =('is_present', 'count')
-        ).reset_index()
+    df.groupby(['ts_group', 'Time', 'Subject', 'Subject Code'])
+    .agg(
+        Present_Count = ('is_present_bool', 'sum'),
+        Total_Count   = ('is_present_bool', 'count')
+    ).reset_index()
+)
 
-    )
 
     summary['Attendance Stats'] = (
         "✅ " + summary['Present_Count'].astype(str) + " /"

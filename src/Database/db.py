@@ -91,5 +91,19 @@ def create_attendance(logs):
     return response.data
 
 def get_attendance_for_teacher(teacher_id):
-    response = supabase.table('attendance_logs').select("*, subjects!inner(*)").eq('subjects.teacher_id', teacher_id).execute()
-    return response.data
+    subjects_res = supabase.table('subjects').select("*").eq("teacher_id", teacher_id).execute()
+    subjects = subjects_res.data or []
+
+    for sub in subjects:
+        sid = sub['subject_id']
+
+        stu_res = supabase.table('subject_students') \
+            .select('student_id', count='exact').eq('subject_id', sid).execute()
+        sub['total_students'] = stu_res.count or 0
+
+        att_res = supabase.table('attendance_logs') \
+            .select('timestamp').eq('subject_id', sid).execute()
+        timestamps = [l['timestamp'] for l in (att_res.data or []) if l.get('timestamp')]
+        sub['total_classes'] = len(set(timestamps))
+
+    return subjects

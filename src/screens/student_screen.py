@@ -66,10 +66,10 @@ def student_dashboard():
 
 
         stats = stats_map.get(sid,{"total":0, "attended": 0} )
-        def unenroll_button():
-                if st.button("Unenroll from tihs course", type='tertiary', width='stretch', icon=':material/delete_forever:'):
-                    unenroll_student_to_subject(student_id, sid)
-                    st.toast(f"Unenrolled from {sub['name']} successfully!")
+        def unenroll_button(current_sid=sid, current_name=sub['name']):
+                if st.button("Unenroll from this course", type='tertiary', width='stretch', icon=':material/delete_forever:', key=f"unenroll_{current_sid}"):
+                    unenroll_student_to_subject(student_id, current_sid)
+                    st.toast(f"Unenrolled from {current_name} successfully!")
                     st.rerun()
 
         with cols[i % 2]:

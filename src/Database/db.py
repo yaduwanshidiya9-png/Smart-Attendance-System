@@ -91,19 +91,18 @@ def create_attendance(logs):
     return response.data
 
 def get_attendance_for_teacher(teacher_id):
-    subjects_res = supabase.table('subjects').select("*").eq("teacher_id", teacher_id).execute()
-    subjects = subjects_res.data or []
+    # 1. Pehle teacher ke subjects ki IDs nikaalein
+    subjects_res = supabase.table('subjects').select("subject_id").eq("teacher_id", teacher_id).execute()
+    subject_ids = [s['subject_id'] for s in subjects_res.data]
 
-    for sub in subjects:
-        sid = sub['subject_id']
+    if not subject_ids:
+        return []
 
-        stu_res = supabase.table('subject_students') \
-            .select('student_id', count='exact').eq('subject_id', sid).execute()
-        sub['total_students'] = stu_res.count or 0
+    # 2. Ab 'attendance_logs' se data uthayein aur 'subjects' table ko join karein
+    # Is select statement mein 'subjects(*)' likhne se hi r['subjects']['name'] milega
+    res = supabase.table('attendance_logs') \
+        .select("*, subjects(*)") \
+        .in_('subject_id', subject_ids) \
+        .execute()
 
-        att_res = supabase.table('attendance_logs') \
-            .select('timestamp').eq('subject_id', sid).execute()
-        timestamps = [l['timestamp'] for l in (att_res.data or []) if l.get('timestamp')]
-        sub['total_classes'] = len(set(timestamps))
-
-    return subjects
+    return res.data

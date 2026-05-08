@@ -60,7 +60,7 @@ def process_bulkk_audio(audio_bytes, candidates_dict, threshold=0.65):
                 continue
             segment_audio = audio[start:end]
             wav = preprocess_wav(segment_audio)
-            embedding = encoder.embed_utterances(wav)
+            embedding = encoder.embed_utterance(wav)
 
             sid, score = identify_speaker(embedding, candidates_dict, threshold )
 
@@ -68,8 +68,8 @@ def process_bulkk_audio(audio_bytes, candidates_dict, threshold=0.65):
                 if sid not in identified_results or score > identified_results[sid]:
                     identified_results[sid] = score
 
-            return identified_results
+        return identified_results
         
     except Exception as e:
         st.error('Bulk process error')
-        return 
+        return {}

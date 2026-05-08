@@ -19,12 +19,16 @@ def voice_attendance_dialog(selected_subject_id):
     audio_data = st.audio_input("Record classroom audio")
 
     if st.button('Analyze Audio', width='stretch', type='primary'):
+        if audio_data is None:
+            st.error("Please record audio first!")
+            return
+
         with st.spinner('Processing Audio data'):
             enrolled_res = supabase.table('subject_students').select("*, students(*)").eq('subject_id',selected_subject_id ).execute()
             enrolled_students = enrolled_res.data
 
             if not enrolled_students:
-                st.warning('No students enrolled in this course')
+                st.warning("No students enrolled in this course")
                 return 
             condidates_dict  = {
                 s['students']['student_id'] : s['students']['voice_embedding']
@@ -38,6 +42,9 @@ def voice_attendance_dialog(selected_subject_id):
             audio_bytes = audio_data.read()
 
             detected_scores = process_bulkk_audio(audio_bytes, condidates_dict)
+
+            if detected_scores is None:
+                st.error("AI could not process the audio. Please try recording again.")
 
             results, attendance_to_log  = [], []
 
@@ -66,7 +73,7 @@ def voice_attendance_dialog(selected_subject_id):
 
             st.session_state.voice_attendance_results = (pd.DataFrame(results), attendance_to_log)
 
-    if st.session_state.get('voice_attendance_resuls'):
+    if st.session_state.get("voice_attendance_results"):
         st.divider()
         df_results, logs = st.session_state.voice_attendance_results
         show_attendance_result(df_results, logs)
